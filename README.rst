@@ -37,7 +37,7 @@ Track event loop lags in StatsD
 
 Tracks how much scheduled calls get delayed and sends the lags to StatsD:
 
-.. image:: docs/loop-lags.png
+.. image:: https://github.com/qntln/aiodebug/raw/master/docs/loop-lags.png
 
 
 
