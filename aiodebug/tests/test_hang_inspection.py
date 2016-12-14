@@ -14,7 +14,7 @@ def test_get_stack_trace():
 
 
 @pytest.mark.asyncio
-async def test_hang_inspection(tmpdir):
+async def test_hang_inspection_when_hang(tmpdir):
 	output = str(tmpdir)
 	print('You can inspect the stack trace manually in', output)
 	instance = aiodebug.hang_inspection.enable(output)
@@ -31,7 +31,7 @@ async def test_hang_inspection(tmpdir):
 
 
 @pytest.mark.asyncio
-async def test_hang_inspection_false_positive(tmpdir):
+async def test_hang_inspection_when_no_hang(tmpdir):
 	output = str(tmpdir)
 	instance = aiodebug.hang_inspection.enable(output)
 	await asyncio.sleep(1)

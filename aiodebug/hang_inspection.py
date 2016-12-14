@@ -13,24 +13,28 @@ from pygments.formatters import HtmlFormatter
 
 
 
-
 class TraceDumper(threading.Thread):
 
-	def __init__(self, dir_name: str, interval: float, last_loop_iteration_time: List[float], lock: threading.Lock) -> None:
+	def __init__(self, dir_name: str, interval: float, last_loop_iteration_time_wrapped: List[float], lock: threading.Lock) -> None:
 		self.interval = interval
 		self.dir_name = os.path.abspath(dir_name)
-		assert os.path.isdir(self.dir_name)
-		self.last_loop_iteration_time = last_loop_iteration_time
+		self.last_loop_iteration_time_wrapped = last_loop_iteration_time_wrapped
 		self.lock = lock
 		self.stop = False
 		self.monitor_task = None  # type: Optional[asyncio.Task]
+
+		# Eliminate IO errors later (on hang)
+		assert os.path.isdir(self.dir_name)
+		assert os.access(self.dir_name, os.W_OK)
+
 		threading.Thread.__init__(self)
 
 
 	def run(self) -> None:
+		'''Thread loop'''
 		while not self.stop:
 			with self.lock:
-				if time.monotonic() - self.last_loop_iteration_time[0] > self.interval:
+				if time.monotonic() - self.last_loop_iteration_time_wrapped[0] > self.interval:
 					for i in range(3):
 						dt = datetime.datetime.now().strftime('%Y.%m.%d-%H:%M:%S')
 						self.save_stack_trace('stacktrace-{datetime}-{i}.html'.format(datetime = dt, i = i))
@@ -68,16 +72,17 @@ def enable(stack_output_dir: str, interval: float = 0.25, loop: asyncio.Abstract
 	if loop is None:
 		loop = asyncio.get_event_loop()
 
-	last_loop_iteration_time = [time.monotonic()]
+	# This value is wrapped into a list, so python doesnt pass the number by value but by reference.
+	last_loop_iteration_time_wrapped = [time.monotonic()]
 	lock = threading.Lock()
 
-	tracer = TraceDumper(stack_output_dir, interval, last_loop_iteration_time, lock)
+	tracer = TraceDumper(stack_output_dir, interval, last_loop_iteration_time_wrapped, lock)
 	tracer.setDaemon(True)
 
 	async def monitor():
 		while loop.is_running():
 			with lock:
-				last_loop_iteration_time[0] = time.monotonic()
+				last_loop_iteration_time_wrapped[0] = time.monotonic()
 			await asyncio.sleep(interval / 2.)
 
 	tracer.monitor_task = loop.create_task(monitor())
