@@ -9,7 +9,7 @@ import aiodebug.hang_inspection
 
 def test_get_stack_trace():
 	stacktrace = aiodebug.hang_inspection.TraceDumper._get_stack_trace()
-	assert len(stacktrace) > 10000
+	assert len(stacktrace) > 1000
 	assert 'test_get_stack_trace' in stacktrace
 
 
