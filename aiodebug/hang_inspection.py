@@ -83,5 +83,4 @@ def disable(tracedumper_task_tuple: Tuple[TraceDumper, asyncio.Task]) -> None:
 	'''Stop detecting hangs'''
 	instance, monitor_task = tracedumper_task_tuple
 	instance.stop = True
-	if monitor_task:
-		monitor_task.cancel()
+	monitor_task.cancel()
