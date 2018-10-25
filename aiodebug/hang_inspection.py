@@ -74,6 +74,7 @@ def enable(stack_output_dir: str, interval: float = 0.25, loop: asyncio.Abstract
 			await asyncio.sleep(interval / 2.)
 
 	monitor_task = loop.create_task(monitor())
+	monitor_task._log_destroy_pending = False
 	tracer.start()
 
 	return tracer, monitor_task
