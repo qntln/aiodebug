@@ -1,11 +1,13 @@
 from typing import List, Tuple
-import sys
-import traceback
+
 import asyncio
-import time
-import os
-import threading
+import contextlib
 import datetime
+import os
+import sys
+import threading
+import time
+import traceback
 
 
 
@@ -54,7 +56,7 @@ class TraceDumper(threading.Thread):
 			file.write(self._get_stack_trace())
 
 		
-def enable(stack_output_dir: str, interval: float = 0.25, loop: asyncio.AbstractEventLoop = None) -> Tuple[TraceDumper, asyncio.Task]:
+def start(stack_output_dir: str, interval: float = 0.25, loop: asyncio.AbstractEventLoop = None) -> Tuple[TraceDumper, asyncio.Task]:
 	'''
 	Start detecting hangs in asyncio loop. If a hang for more than `interval` is detected, a stack trace is saved into
 	`stack_output_dir`.
@@ -74,14 +76,15 @@ def enable(stack_output_dir: str, interval: float = 0.25, loop: asyncio.Abstract
 			await asyncio.sleep(interval / 2.)
 
 	monitor_task = loop.create_task(monitor())
-	monitor_task._log_destroy_pending = False
 	tracer.start()
 
 	return tracer, monitor_task
 
 
-def disable(tracedumper_task_tuple: Tuple[TraceDumper, asyncio.Task]) -> None:
+async def stop_wait(tracedumper_task_tuple: Tuple[TraceDumper, asyncio.Task]) -> None:
 	'''Stop detecting hangs'''
 	instance, monitor_task = tracedumper_task_tuple
 	instance.stop = True
 	monitor_task.cancel()
+	with contextlib.suppress(asyncio.CancelledError):
+		await monitor_task
